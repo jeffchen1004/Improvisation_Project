@@ -1,4 +1,4 @@
-# quesries.py
+# queries.py
 
 from pyensemble.models import Experiment, Response, Session
 
