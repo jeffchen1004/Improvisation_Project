@@ -37,6 +37,39 @@ jsPsych.plugins['record-midi'] = (function() {
         }
     };
 
+    // Function to start the metronome
+    plugin.startMetronome = function(bpm, numberOfBeats, startDelay) {
+        var context = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Calculate the delay time between each beat
+        var beatInterval = 60 / bpm * 1000;
+
+        // Function to play a beep sound
+        var playBeep = function() {
+            var osc = context.createOscillator();
+            osc.type = 'sine'; // Experiment with different waveforms: sine, square, sawtooth, triangle
+
+            osc.connect(context.destination);
+            osc.start();
+            osc.stop(context.currentTime + 0.1); // The beep lasts for 0.1 seconds
+        };
+
+        // Start the metronome after the specified start delay
+        setTimeout(function() {
+            plugin.metronomeInterval = setInterval(function() {
+                playBeep();
+
+                if (numberOfBeats) {
+                    numberOfBeats--;
+                    if (numberOfBeats <= 0) {
+                        clearInterval(plugin.metronomeInterval);
+                    }
+                }
+            }, beatInterval);
+        }, startDelay);
+    };
+
+
     plugin.trial = function (display_element, trial) {
         // Web MIDI API Integration
         let startTime; // This will hold the start time of recording
@@ -54,6 +87,10 @@ jsPsych.plugins['record-midi'] = (function() {
                 data: message.data,
                 timestamp: elapsedTime
             });
+            // Start the metronome based on trial parameters
+            if (trial.useMetronome) {
+                plugin.startMetronome(trial.metronome_bpm, trial.metronome_beats, trial.metronome_delay);
+            }
 
             updateMidiData(message.data, elapsedTime);
         }
